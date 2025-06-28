@@ -1,0 +1,8 @@
+{
+  "name": "Haushaltsaufgaben Addon Repo",
+  "url": "https://github.com/einstein1403/haushaltsApp",
+  "maintainer": "Dein Name",
+  "addons": [
+    "haushaltsapp"
+  ]
+}
