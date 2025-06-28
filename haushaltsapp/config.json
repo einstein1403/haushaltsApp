@@ -1,0 +1,11 @@
+{
+  "name": "Haushaltsaufgaben App",
+  "version": "1.0",
+  "slug": "haushaltsaufgaben",
+  "description": "Ein Addon für Haushaltsaufgaben mit Punktevergabe.",
+  "arch": ["armhf", "armv7", "aarch64", "amd64", "i386"],
+  "startup": "application",
+  "boot": "auto",
+  "options": {},
+  "schema": {}
+}
