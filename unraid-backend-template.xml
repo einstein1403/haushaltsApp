@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>HouseholdTasks-Backend</Name>
-  <Repository>ghcr.io/DEIN-USERNAME/household-tasks-app-backend:latest</Repository>
-  <Registry>https://github.com/DEIN-USERNAME/household-tasks-app/pkgs/container/household-tasks-app-backend</Registry>
+  <Repository>ghcr.io/einstein1403/haushaltsapp-backend:latest</Repository>
+  <Registry>https://github.com/einstein1403/haushaltsApp/pkgs/container/haushaltsapp-backend</Registry>
   <Network>bridge</Network>
   <MyIP/>
   <Shell>sh</Shell>

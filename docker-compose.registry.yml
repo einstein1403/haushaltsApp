@@ -20,7 +20,7 @@ services:
       retries: 3
     
   backend:
-    image: ghcr.io/DEIN-USERNAME/household-tasks-app-backend:latest
+    image: ghcr.io/einstein1403/haushaltsapp-backend:latest
     container_name: household-backend
     ports:
       - "3001:3001"
@@ -34,7 +34,7 @@ services:
     restart: unless-stopped
       
   frontend:
-    image: ghcr.io/DEIN-USERNAME/household-tasks-app-frontend:latest
+    image: ghcr.io/einstein1403/haushaltsapp-frontend:latest
     container_name: household-frontend
     ports:
       - "3000:80"
