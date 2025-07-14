@@ -1,49 +1,117 @@
 # Deployment Guide für haushaltsApp
 
-## GitHub Container Registry Setup
+## 🚀 Quick Start
 
-### 1. Repository Setup
-Die Konfiguration ist bereits für den GitHub Benutzer `einstein1403` eingerichtet.
-
-### 2. Automatisches Image Building
-Die GitHub Actions Workflow (`.github/workflows/docker-build.yml`) baut automatisch Docker Images wenn:
-- Code zum `main` oder `develop` Branch gepusht wird
-- Pull Requests erstellt werden
-- Git Tags erstellt werden (für Versionen)
-
-### 3. Deployment Optionen
-
-#### Option A: Docker Compose mit Registry Images
+### Lokale Entwicklung
 ```bash
-# Verwendet vorgefertigte Images von GitHub Container Registry
-docker-compose -f docker-compose.registry.yml up -d
+# 1. Environment Setup
+cp .env.local .env
+
+# 2. Start Services
+docker-compose -f docker-compose.local.yml up -d
+
+# 3. Access
+# Frontend: http://localhost:3000
+# Backend: http://localhost:3001
 ```
 
-#### Option B: Docker Compose mit lokalem Build
+### Unraid Deployment
 ```bash
-# Baut Images lokal
-docker-compose up -d
+# 1. Environment Setup
+cp .env.unraid .env
+nano .env  # Change passwords!
+
+# 2. Start Services
+docker-compose -f docker-compose.unraid.yml up -d
+
+# 3. Access
+# Frontend: http://UNRAID-IP:3000
 ```
 
-#### Option C: Unraid Server
-1. Frontend Template: `unraid-template.xml` importieren
-2. Backend Template: `unraid-backend-template.xml` importieren
-3. PostgreSQL Container separat einrichten
-4. Container in richtiger Reihenfolge starten
+## 📋 Deployment Files
 
-### 4. Umgebungsvariablen
-Erstellen Sie eine `.env` Datei:
+| File | Purpose |
+|------|---------|
+| `docker-compose.local.yml` | Local development with builds |
+| `docker-compose.unraid.yml` | Production deployment with registry images |
+| `.env.local` | Development environment variables |
+| `.env.unraid` | Production environment variables template |
+
+## 🔧 Configuration
+
+### Environment Variables
+Copy the appropriate `.env` file and customize:
+
+**Local Development (.env.local)**
+```bash
+DB_PASSWORD=password
+JWT_SECRET=dev-secret-key-change-in-production
 ```
-DB_PASSWORD=sicheres-passwort
-JWT_SECRET=sehr-sicherer-jwt-schluessel
+
+**Production (.env.unraid)**
+```bash
+DB_PASSWORD=your-secure-password
+JWT_SECRET=your-secure-jwt-secret
 ```
 
-### 5. Ports
-- Frontend: 3000 (HTTP)
-- Backend: 3001 (API)
-- Database: 5432 (PostgreSQL)
+**Generate secure JWT secret:**
+```bash
+openssl rand -base64 32
+```
 
-### 6. Persistente Daten
-Die PostgreSQL Daten werden in einem Volume gespeichert:
-- Docker Compose: `postgres_data` Volume
-- Unraid: `/mnt/user/appdata/household-tasks/data/postgres`
+## 🐳 Container Images
+
+Images are automatically built via GitHub Actions:
+- `ghcr.io/einstein1403/haushaltsapp-frontend:latest`
+- `ghcr.io/einstein1403/haushaltsapp-backend:latest`
+
+## 🛡️ User Management
+
+### First User Setup
+1. Register first user → automatically becomes Admin
+2. Subsequent users need admin approval
+3. Admin can manage users via `/admin` route
+
+### Ports
+- **Frontend:** 3000 (HTTP)
+- **Backend:** 3001 (API)  
+- **Database:** 5432 (PostgreSQL)
+
+## 💾 Data Persistence
+
+### Local Development
+- Data stored in Docker volume: `postgres_data`
+
+### Unraid
+- Data stored in: `/mnt/user/appdata/household-tasks/data/postgres`
+
+## 🔄 Updates
+
+### Local Development
+```bash
+docker-compose -f docker-compose.local.yml down
+docker-compose -f docker-compose.local.yml build
+docker-compose -f docker-compose.local.yml up -d
+```
+
+### Unraid
+```bash
+docker-compose -f docker-compose.unraid.yml pull
+docker-compose -f docker-compose.unraid.yml up -d
+```
+
+## 🐛 Troubleshooting
+
+### Common Issues
+1. **Database connection failed:** Check `DB_PASSWORD` in `.env`
+2. **Port already in use:** Change ports in compose file
+3. **Permission denied:** Ensure Docker has access to mount paths
+
+### Logs
+```bash
+# All services
+docker-compose -f docker-compose.unraid.yml logs
+
+# Specific service
+docker-compose -f docker-compose.unraid.yml logs backend
+```

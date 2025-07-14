@@ -8,13 +8,10 @@ import CreateTask from './components/CreateTask';
 import RecurringTasks from './components/RecurringTasks';
 import Statistics from './components/Statistics';
 import Navigation from './components/Navigation';
+import AdminUserManagement from './components/AdminUserManagement';
+import PendingApproval from './components/PendingApproval';
+import { User } from './services/api';
 
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  points: number;
-}
 
 function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
@@ -47,6 +44,11 @@ function App() {
     return <Login onLogin={login} />;
   }
 
+  // Check if user is approved
+  if (user && !user.is_approved) {
+    return <PendingApproval user={user} onLogout={logout} />;
+  }
+
   return (
     <Router>
       <div className="app">
@@ -58,6 +60,9 @@ function App() {
             <Route path="/create-task" element={<CreateTask />} />
             <Route path="/recurring-tasks" element={<RecurringTasks />} />
             <Route path="/statistics" element={<Statistics />} />
+            {user && user.role === 'admin' && (
+              <Route path="/admin" element={<AdminUserManagement token={token} />} />
+            )}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </main>

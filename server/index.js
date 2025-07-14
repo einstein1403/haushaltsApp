@@ -14,7 +14,7 @@ app.use(cors());
 app.use(express.json());
 
 // Middleware to verify JWT token
-const authenticateToken = (req, res, next) => {
+const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -22,11 +22,34 @@ const authenticateToken = (req, res, next) => {
     return res.sendStatus(401);
   }
 
-  jwt.verify(token, JWT_SECRET, (err, user) => {
+  jwt.verify(token, JWT_SECRET, async (err, user) => {
     if (err) return res.sendStatus(403);
-    req.user = user;
+    
+    // Get user details from database
+    const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [user.userId]);
+    if (userResult.rows.length === 0) {
+      return res.sendStatus(403);
+    }
+    
+    req.user = userResult.rows[0];
     next();
   });
+};
+
+// Middleware to check if user is approved
+const requireApproval = (req, res, next) => {
+  if (!req.user.is_approved) {
+    return res.status(403).json({ error: 'Account pending approval' });
+  }
+  next();
+};
+
+// Middleware to check if user is admin
+const requireAdmin = (req, res, next) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  next();
 };
 
 // Health check endpoint
@@ -54,13 +77,22 @@ app.post('/api/register', async (req, res) => {
     const { name, email, password } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
     
+    // Check if this is the first user
+    const userCount = await pool.query('SELECT COUNT(*) FROM users');
+    const isFirstUser = parseInt(userCount.rows[0].count) === 0;
+    
     const result = await pool.query(
-      'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email',
-      [name, email, hashedPassword]
+      'INSERT INTO users (name, email, password_hash, role, is_approved, approved_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email, role, is_approved',
+      [name, email, hashedPassword, isFirstUser ? 'admin' : 'user', isFirstUser, isFirstUser ? new Date() : null]
     );
     
     const token = jwt.sign({ userId: result.rows[0].id }, JWT_SECRET);
-    res.json({ token, user: result.rows[0] });
+    
+    res.json({ 
+      token, 
+      user: result.rows[0],
+      message: isFirstUser ? 'Welcome! You are now the administrator.' : 'Registration successful. Waiting for admin approval.'
+    });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -77,7 +109,14 @@ app.post('/api/login', async (req, res) => {
       const token = jwt.sign({ userId: user.id }, JWT_SECRET);
       res.json({ 
         token, 
-        user: { id: user.id, name: user.name, email: user.email, points: user.points }
+        user: { 
+          id: user.id, 
+          name: user.name, 
+          email: user.email, 
+          points: user.points,
+          role: user.role,
+          is_approved: user.is_approved
+        }
       });
     } else {
       res.status(401).json({ error: 'Invalid credentials' });
@@ -88,16 +127,16 @@ app.post('/api/login', async (req, res) => {
 });
 
 // User routes
-app.get('/api/users', authenticateToken, async (req, res) => {
+app.get('/api/users', authenticateToken, requireApproval, async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, name, email, points FROM users ORDER BY points DESC');
+    const result = await pool.query('SELECT id, name, email, points FROM users WHERE is_approved = TRUE ORDER BY points DESC');
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-app.post('/api/users/reset-scores', authenticateToken, async (req, res) => {
+app.post('/api/users/reset-scores', authenticateToken, requireAdmin, async (req, res) => {
   try {
     await pool.query('UPDATE users SET points = 0');
     await pool.query('DELETE FROM point_history');
@@ -108,7 +147,7 @@ app.post('/api/users/reset-scores', authenticateToken, async (req, res) => {
 });
 
 // Task routes
-app.get('/api/tasks', authenticateToken, async (req, res) => {
+app.get('/api/tasks', authenticateToken, requireApproval, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT t.*, 
@@ -128,7 +167,7 @@ app.get('/api/tasks', authenticateToken, async (req, res) => {
 });
 
 // Task suggestions route
-app.get('/api/task-suggestions', authenticateToken, async (req, res) => {
+app.get('/api/task-suggestions', authenticateToken, requireApproval, async (req, res) => {
   try {
     const { q } = req.query;
     
@@ -159,7 +198,7 @@ app.get('/api/task-suggestions', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/tasks', authenticateToken, async (req, res) => {
+app.post('/api/tasks', authenticateToken, requireApproval, async (req, res) => {
   try {
     const { title, description, points, assigned_to, is_recurring, recurrence_type, recurrence_value } = req.body;
     
@@ -188,7 +227,7 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
   }
 });
 
-app.patch('/api/tasks/:id/complete', authenticateToken, async (req, res) => {
+app.patch('/api/tasks/:id/complete', authenticateToken, requireApproval, async (req, res) => {
   try {
     const { id } = req.params;
     const { completed_by } = req.body;
@@ -242,7 +281,7 @@ app.patch('/api/tasks/:id/complete', authenticateToken, async (req, res) => {
 });
 
 // Recurring tasks routes
-app.get('/api/recurring-tasks', authenticateToken, async (req, res) => {
+app.get('/api/recurring-tasks', authenticateToken, requireApproval, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT rt.*, 
@@ -260,7 +299,7 @@ app.get('/api/recurring-tasks', authenticateToken, async (req, res) => {
   }
 });
 
-app.patch('/api/recurring-tasks/:id/toggle', authenticateToken, async (req, res) => {
+app.patch('/api/recurring-tasks/:id/toggle', authenticateToken, requireApproval, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -355,7 +394,7 @@ async function generateRecurringTasks() {
 setInterval(generateRecurringTasks, 60 * 60 * 1000);
 
 // Statistics routes
-app.get('/api/stats/weekly', authenticateToken, async (req, res) => {
+app.get('/api/stats/weekly', authenticateToken, requireApproval, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT u.name, COALESCE(SUM(ph.points), 0) as weekly_points
@@ -371,7 +410,7 @@ app.get('/api/stats/weekly', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/api/stats/monthly', authenticateToken, async (req, res) => {
+app.get('/api/stats/monthly', authenticateToken, requireApproval, async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT u.name, COALESCE(SUM(ph.points), 0) as monthly_points
@@ -380,6 +419,90 @@ app.get('/api/stats/monthly', authenticateToken, async (req, res) => {
         AND ph.earned_at >= CURRENT_DATE - INTERVAL '30 days'
       GROUP BY u.id, u.name
       ORDER BY monthly_points DESC
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin routes for user management
+app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT u.id, u.name, u.email, u.points, u.role, u.is_approved, u.created_at,
+             approver.name as approved_by_name, u.approved_at
+      FROM users u
+      LEFT JOIN users approver ON u.approved_by = approver.id
+      ORDER BY u.created_at DESC
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.patch('/api/admin/users/:id/approve', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await pool.query(
+      'UPDATE users SET is_approved = TRUE, approved_by = $1, approved_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
+      [req.user.id, id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json({ message: 'User approved successfully', user: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.patch('/api/admin/users/:id/reject', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await pool.query(
+      'UPDATE users SET is_approved = FALSE, approved_by = NULL, approved_at = NULL WHERE id = $1 RETURNING *',
+      [id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json({ message: 'User approval revoked', user: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Don't allow deleting yourself
+    if (parseInt(id) === req.user.id) {
+      return res.status(400).json({ error: 'Cannot delete your own account' });
+    }
+    
+    await pool.query('DELETE FROM users WHERE id = $1', [id]);
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/admin/pending-users', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, name, email, created_at
+      FROM users 
+      WHERE is_approved = FALSE
+      ORDER BY created_at ASC
     `);
     res.json(result.rows);
   } catch (error) {

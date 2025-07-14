@@ -77,6 +77,30 @@
   background: #c82333;
 }
 
+.admin-link {
+  background: #e74c3c !important;
+  color: white !important;
+  border-radius: 4px;
+  padding: 8px 12px !important;
+  text-decoration: none !important;
+  font-weight: 500;
+}
+
+.admin-link:hover {
+  background: #c0392b !important;
+}
+
+.admin-badge {
+  background: #e74c3c;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  margin-left: 8px;
+}
+
 @media (max-width: 768px) {
   .navigation {
     flex-direction: column;
