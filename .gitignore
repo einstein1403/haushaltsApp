@@ -118,3 +118,4 @@ temp/
 *.njsproj
 *.sln
 *.sw?
+.DS_Store
