@@ -10,7 +10,24 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
-app.use(cors());
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    
+    // Allow localhost and local network IPs
+    if (origin.includes('localhost') || 
+        origin.includes('192.168.') || 
+        origin.includes('10.') ||
+        origin.includes('172.') ||
+        origin.includes('tower.localdomain')) {
+      return callback(null, true);
+    }
+    
+    return callback(null, true); // Allow all for now
+  },
+  credentials: true
+}));
 app.use(express.json());
 
 // Middleware to verify JWT token
