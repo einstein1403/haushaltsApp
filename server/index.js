@@ -500,14 +500,17 @@ app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, 
 
 app.get('/api/admin/pending-users', authenticateToken, requireAdmin, async (req, res) => {
   try {
+    console.log('Fetching pending users for admin:', req.user.id);
     const result = await pool.query(`
       SELECT id, name, email, created_at
       FROM users 
       WHERE is_approved = FALSE
       ORDER BY created_at ASC
     `);
+    console.log('Found pending users:', result.rows.length);
     res.json(result.rows);
   } catch (error) {
+    console.error('Error fetching pending users:', error);
     res.status(500).json({ error: error.message });
   }
 });
