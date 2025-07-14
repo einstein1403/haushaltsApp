@@ -1,4 +1,4 @@
-import { ApiError, ValidationError } from '../types';
+import { ValidationError } from '../types';
 
 export class AppError extends Error {
   public statusCode?: number;

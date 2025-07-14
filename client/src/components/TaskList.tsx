@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { taskAPI, userAPI, Task, User } from '../services/api';
-import { handleApiError, getErrorMessage } from '../utils/errorHandler';
+import { handleApiError } from '../utils/errorHandler';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 import './TaskList.css';
@@ -11,10 +11,6 @@ const TaskList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
 
   const loadData = useCallback(async () => {
     try {
@@ -34,6 +30,10 @@ const TaskList: React.FC = () => {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleCompleteTask = useCallback(async (taskId: number, completedBy: number) => {
     try {
@@ -144,7 +144,7 @@ const TaskList: React.FC = () => {
                   <strong>Assigned to:</strong> {task.assigned_to_name || 'Not assigned'}
                 </div>
                 <div className="task-date">
-                  <strong>Created:</strong> {new Date(task.created_at).toLocaleDateString()}
+                  <strong>Created:</strong> {task.created_at ? new Date(task.created_at).toLocaleDateString() : 'Unknown'}
                 </div>
                 {task.is_recurring && (
                   <div className="task-recurrence">

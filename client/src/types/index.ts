@@ -1,3 +1,6 @@
+// Import types first
+import type { User, Task, RecurringTask, Stats, TaskSuggestion } from '../services/api';
+
 // API Response types
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -79,5 +82,6 @@ export interface ApiError {
   details?: ValidationError[];
 }
 
-// Re-export from api.ts for convenience
-export type { User, Task, RecurringTask, Stats, TaskSuggestion } from '../services/api';
+// Re-export for convenience
+export type { User, Task, RecurringTask, Stats, TaskSuggestion };
+

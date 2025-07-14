@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { userAPI, taskAPI, User, Task } from '../services/api';
-import { handleApiError, getErrorMessage } from '../utils/errorHandler';
+import { handleApiError } from '../utils/errorHandler';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
 import './Dashboard.css';
@@ -87,6 +87,28 @@ const Dashboard: React.FC = () => {
       </div>
       
       <div className="dashboard-grid">
+        <div className="card stats-card">
+          <h2>Statistics Overview</h2>
+          <div className="stats-grid">
+            <div className="stat-item">
+              <span className="stat-value">{dashboardStats.activeUsers}</span>
+              <span className="stat-label">Active Users</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">{dashboardStats.totalPoints}</span>
+              <span className="stat-label">Total Points</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">{dashboardStats.completedTasks}</span>
+              <span className="stat-label">Completed Tasks</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">{dashboardStats.pendingTasks}</span>
+              <span className="stat-label">Pending Tasks</span>
+            </div>
+          </div>
+        </div>
+
         <div className="card leaderboard-card">
           <h2>Leaderboard</h2>
           {sortedUsers.length === 0 ? (

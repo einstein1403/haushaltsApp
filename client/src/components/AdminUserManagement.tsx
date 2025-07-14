@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './AdminUserManagement.css';
 import { User } from '../services/api';
 
@@ -16,12 +16,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ token }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchUsers();
-    fetchPendingUsers();
-  }, []);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/users', {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -36,9 +31,9 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ token }) => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     }
-  };
+  }, [token]);
 
-  const fetchPendingUsers = async () => {
+  const fetchPendingUsers = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/pending-users', {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -55,7 +50,12 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ token }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    fetchUsers();
+    fetchPendingUsers();
+  }, [fetchUsers, fetchPendingUsers]);
 
   const approveUser = async (userId: number) => {
     try {
@@ -135,7 +135,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ token }) => {
                   <h4>{user.name}</h4>
                   <p>{user.email}</p>
                   <p className="created-date">
-                    Registered: {new Date(user.created_at).toLocaleDateString()}
+                    Registered: {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
                   </p>
                 </div>
                 <div className="user-actions">
@@ -189,7 +189,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ token }) => {
                       {user.is_approved ? 'Approved' : 'Pending'}
                     </span>
                   </td>
-                  <td>{new Date(user.created_at).toLocaleDateString()}</td>
+                  <td>{user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}</td>
                   <td>
                     {user.role !== 'admin' && (
                       <div className="table-actions">

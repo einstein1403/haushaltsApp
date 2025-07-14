@@ -94,7 +94,7 @@ const RecurringTasks: React.FC = () => {
                 </div>
                 <div className="detail-item">
                   <span className="label">Created:</span>
-                  <span className="value">{new Date(task.created_at).toLocaleDateString()}</span>
+                  <span className="value">{task.created_at ? new Date(task.created_at).toLocaleDateString() : 'Unknown'}</span>
                 </div>
                 {task.last_generated && (
                   <div className="detail-item">
