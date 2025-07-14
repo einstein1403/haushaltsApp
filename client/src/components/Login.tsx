@@ -30,7 +30,18 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         onLogin(result.token, result.user);
       }
     } catch (error: any) {
-      setError(error.response?.data?.error || 'An error occurred');
+      console.error('Login error:', error);
+      let errorMessage = 'An error occurred';
+      
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = `Network error: ${error.message}`;
+      } else if (error.code) {
+        errorMessage = `Error code: ${error.code}`;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
