@@ -29,6 +29,25 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+// Health check endpoint
+app.get('/api/health', async (req, res) => {
+  try {
+    // Check database connection
+    await pool.query('SELECT 1');
+    res.status(200).json({ 
+      status: 'healthy', 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime()
+    });
+  } catch (error) {
+    res.status(503).json({ 
+      status: 'unhealthy', 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Auth routes
 app.post('/api/register', async (req, res) => {
   try {

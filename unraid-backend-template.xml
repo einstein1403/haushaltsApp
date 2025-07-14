@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>HouseholdTasks-Backend</Name>
+  <Repository>ghcr.io/DEIN-USERNAME/household-tasks-app-backend:latest</Repository>
+  <Registry>https://github.com/DEIN-USERNAME/household-tasks-app/pkgs/container/household-tasks-app-backend</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/DEIN-USERNAME/household-tasks-app/issues</Support>
+  <Project>https://github.com/DEIN-USERNAME/household-tasks-app</Project>
+  <Overview>Backend API for Household Tasks app. Handles authentication, task management, and database operations.</Overview>
+  <WebUI/>
+  <TemplateURL>https://raw.githubusercontent.com/DEIN-USERNAME/household-tasks-app/main/unraid-backend-template.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/DEIN-USERNAME/household-tasks-app/main/logo.png</Icon>
+  <ExtraParams>--label net.unraid.docker.managed=dockerman</ExtraParams>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled>1609459200</DateInstalled>
+  <DonateText>If this app helps your household, consider buying me a coffee!</DonateText>
+  <DonateLink>https://buymeacoffee.com/deinname</DonateLink>
+  <Requires>This template requires a PostgreSQL database to be running.</Requires>
+  <Config Name="API Port" Target="3001" Default="3001" Mode="tcp" Description="Port for the API server" Type="Port" Display="always" Required="true" Mask="false">3001</Config>
+  <Config Name="Database URL" Target="DATABASE_URL" Default="postgresql://postgres:password@postgres:5432/household_tasks" Mode="" Description="PostgreSQL connection string" Type="Variable" Display="always" Required="true" Mask="false">postgresql://postgres:password@postgres:5432/household_tasks</Config>
+  <Config Name="JWT Secret" Target="JWT_SECRET" Default="" Mode="" Description="Secret key for JWT tokens (generate a secure random string)" Type="Variable" Display="always" Required="true" Mask="true"></Config>
+  <Config Name="Node Environment" Target="NODE_ENV" Default="production" Mode="" Description="Node.js environment" Type="Variable" Display="advanced" Required="false" Mask="false">production</Config>
+  <Config Name="App Data" Target="/app" Default="/mnt/user/appdata/household-tasks/backend" Mode="rw" Description="Backend application files (optional override)" Type="Path" Display="advanced" Required="false" Mask="false">/mnt/user/appdata/household-tasks/backend</Config>
+</Container>
