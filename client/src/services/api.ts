@@ -19,6 +19,8 @@ export interface User {
   name: string;
   email: string;
   points: number;
+  role?: string;
+  is_approved?: boolean;
 }
 
 export interface Task {

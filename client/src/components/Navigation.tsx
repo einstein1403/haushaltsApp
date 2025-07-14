@@ -48,6 +48,14 @@ const Navigation: React.FC<NavigationProps> = ({ user, onLogout }) => {
         >
           Statistics
         </Link>
+        {user && (user as any).role === 'admin' && (
+          <Link 
+            to="/admin" 
+            className={location.pathname === '/admin' ? 'nav-link active admin-link' : 'nav-link admin-link'}
+          >
+            Admin
+          </Link>
+        )}
       </div>
       
       <div className="nav-user">
@@ -55,6 +63,9 @@ const Navigation: React.FC<NavigationProps> = ({ user, onLogout }) => {
           <div className="user-info">
             <span className="user-name">{user.name}</span>
             <span className="user-points">{user.points} pts</span>
+            {(user as any).role === 'admin' && (
+              <span className="admin-badge">Admin</span>
+            )}
             <button onClick={onLogout} className="logout-button">
               Logout
             </button>
