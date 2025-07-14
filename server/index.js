@@ -81,6 +81,8 @@ app.post('/api/register', async (req, res) => {
     const userCount = await pool.query('SELECT COUNT(*) FROM users');
     const isFirstUser = parseInt(userCount.rows[0].count) === 0;
     
+    console.log('User count:', userCount.rows[0].count, 'isFirstUser:', isFirstUser);
+    
     const result = await pool.query(
       'INSERT INTO users (name, email, password_hash, role, is_approved, approved_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email, role, is_approved',
       [name, email, hashedPassword, isFirstUser ? 'admin' : 'user', isFirstUser, isFirstUser ? new Date() : null]
