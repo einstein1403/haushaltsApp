@@ -1,15 +1,13 @@
-version: '3.8'
-
 services:
   database:
     image: postgres:15
-    container_name: household-db
+    container_name: household-db-local
     environment:
       POSTGRES_DB: household_tasks
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
     volumes:
-      - /mnt/user/appdata/household-tasks/data/postgres:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     restart: unless-stopped
@@ -20,22 +18,27 @@ services:
       retries: 3
     
   backend:
-    image: ghcr.io/einstein1403/haushaltsapp-backend:latest
-    container_name: household-backend
+    build: ./server
+    container_name: household-backend-local
     ports:
       - "3001:3001"
     environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD:-changeme}@database:5432/household_tasks
-      - JWT_SECRET=${JWT_SECRET:-changeme-please}
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD:-password}@database:5432/household_tasks
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-key-change-in-production}
     depends_on:
       database:
         condition: service_healthy
+    volumes:
+      - ./server:/app
+      - /app/node_modules
     restart: unless-stopped
       
   frontend:
-    image: ghcr.io/einstein1403/haushaltsapp-frontend:latest
-    container_name: household-frontend
+    build: 
+      context: ./client
+      dockerfile: Dockerfile.prod
+    container_name: household-frontend-local
     ports:
       - "3000:80"
     depends_on:
