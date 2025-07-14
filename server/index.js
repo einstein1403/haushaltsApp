@@ -81,6 +81,8 @@ app.post('/api/register', async (req, res) => {
     const userCount = await pool.query('SELECT COUNT(*) FROM users');
     const isFirstUser = parseInt(userCount.rows[0].count) === 0;
     
+    console.log('User count:', userCount.rows[0].count, 'isFirstUser:', isFirstUser);
+    
     const result = await pool.query(
       'INSERT INTO users (name, email, password_hash, role, is_approved, approved_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, email, role, is_approved',
       [name, email, hashedPassword, isFirstUser ? 'admin' : 'user', isFirstUser, isFirstUser ? new Date() : null]
@@ -498,14 +500,17 @@ app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, 
 
 app.get('/api/admin/pending-users', authenticateToken, requireAdmin, async (req, res) => {
   try {
+    console.log('Fetching pending users for admin:', req.user.id);
     const result = await pool.query(`
       SELECT id, name, email, created_at
       FROM users 
       WHERE is_approved = FALSE
       ORDER BY created_at ASC
     `);
+    console.log('Found pending users:', result.rows.length);
     res.json(result.rows);
   } catch (error) {
+    console.error('Error fetching pending users:', error);
     res.status(500).json({ error: error.message });
   }
 });
