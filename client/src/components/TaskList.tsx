@@ -1,19 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { taskAPI, userAPI, Task, User } from '../services/api';
+import { handleApiError, getErrorMessage } from '../utils/errorHandler';
+import LoadingSpinner from './LoadingSpinner';
+import ErrorMessage from './ErrorMessage';
 import './TaskList.css';
 
 const TaskList: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
+      setError(null);
       const [tasksData, usersData] = await Promise.all([
         taskAPI.getTasks(),
         userAPI.getUsers()
@@ -21,30 +26,55 @@ const TaskList: React.FC = () => {
       
       setTasks(tasksData);
       setUsers(usersData);
-    } catch (error) {
+    } catch (err) {
+      const error = handleApiError(err);
+      setError(error.message);
       console.error('Error loading tasks:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleCompleteTask = async (taskId: number, completedBy: number) => {
+  const handleCompleteTask = useCallback(async (taskId: number, completedBy: number) => {
     try {
       await taskAPI.completeTask(taskId, completedBy);
       await loadData();
-    } catch (error) {
+    } catch (err) {
+      const error = handleApiError(err);
+      setError(error.message);
       console.error('Error completing task:', error);
     }
-  };
+  }, [loadData]);
 
-  const filteredTasks = tasks.filter(task => {
-    if (filter === 'pending') return !task.completed;
-    if (filter === 'completed') return task.completed;
-    return true;
-  });
+  // Memoized filter calculations for performance
+  const taskCounts = useMemo(() => {
+    const pending = tasks.filter(t => !t.completed).length;
+    const completed = tasks.filter(t => t.completed).length;
+    return {
+      all: tasks.length,
+      pending,
+      completed
+    };
+  }, [tasks]);
+
+  const filteredTasks = useMemo(() => {
+    if (filter === 'pending') return tasks.filter(task => !task.completed);
+    if (filter === 'completed') return tasks.filter(task => task.completed);
+    return tasks;
+  }, [tasks, filter]);
 
   if (loading) {
-    return <div className="loading">Loading tasks...</div>;
+    return <LoadingSpinner message="Loading tasks..." />;
+  }
+
+  if (error) {
+    return (
+      <ErrorMessage 
+        title="Error loading tasks"
+        message={error}
+        onRetry={loadData}
+      />
+    );
   }
 
   return (
@@ -52,34 +82,44 @@ const TaskList: React.FC = () => {
       <div className="task-list-header">
         <h1>Tasks</h1>
         
-        <div className="filter-buttons">
+        <div className="filter-buttons" role="tablist" aria-label="Task filters">
           <button 
             className={filter === 'all' ? 'filter-button active' : 'filter-button'}
             onClick={() => setFilter('all')}
+            role="tab"
+            aria-selected={filter === 'all'}
+            aria-controls="task-list-content"
           >
-            All ({tasks.length})
+            All ({taskCounts.all})
           </button>
           <button 
             className={filter === 'pending' ? 'filter-button active' : 'filter-button'}
             onClick={() => setFilter('pending')}
+            role="tab"
+            aria-selected={filter === 'pending'}
+            aria-controls="task-list-content"
           >
-            Pending ({tasks.filter(t => !t.completed).length})
+            Pending ({taskCounts.pending})
           </button>
           <button 
             className={filter === 'completed' ? 'filter-button active' : 'filter-button'}
             onClick={() => setFilter('completed')}
+            role="tab"
+            aria-selected={filter === 'completed'}
+            aria-controls="task-list-content"
           >
-            Completed ({tasks.filter(t => t.completed).length})
+            Completed ({taskCounts.completed})
           </button>
         </div>
       </div>
       
-      {filteredTasks.length === 0 ? (
-        <div className="empty-state">
-          <p>No tasks found</p>
-        </div>
-      ) : (
-        <div className="tasks-grid">
+      <div id="task-list-content" role="tabpanel" aria-label={`${filter} tasks`}>
+        {filteredTasks.length === 0 ? (
+          <div className="empty-state">
+            <p>No tasks found</p>
+          </div>
+        ) : (
+          <div className="tasks-grid">
           {filteredTasks.map((task) => (
             <div key={task.id} className={`task-card ${task.completed ? 'completed' : 'pending'}`}>
               <div className="task-header">
@@ -127,6 +167,7 @@ const TaskList: React.FC = () => {
                   <label htmlFor={`complete-${task.id}`}>Complete as:</label>
                   <select
                     id={`complete-${task.id}`}
+                    aria-label={`Complete task "${task.title}" as user`}
                     onChange={(e) => {
                       if (e.target.value) {
                         handleCompleteTask(task.id, parseInt(e.target.value));
@@ -145,8 +186,9 @@ const TaskList: React.FC = () => {
               )}
             </div>
           ))}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

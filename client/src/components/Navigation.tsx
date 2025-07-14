@@ -12,46 +12,59 @@ const Navigation: React.FC<NavigationProps> = ({ user, onLogout }) => {
   const location = useLocation();
 
   return (
-    <nav className="navigation">
+    <nav className="navigation" role="navigation" aria-label="Main navigation">
       <div className="nav-brand">
         <h1>Household Tasks</h1>
       </div>
       
-      <div className="nav-links">
+      <div className="nav-links" role="menubar">
         <Link 
           to="/" 
           className={location.pathname === '/' ? 'nav-link active' : 'nav-link'}
+          role="menuitem"
+          aria-current={location.pathname === '/' ? 'page' : undefined}
         >
           Dashboard
         </Link>
         <Link 
           to="/tasks" 
           className={location.pathname === '/tasks' ? 'nav-link active' : 'nav-link'}
+          role="menuitem"
+          aria-current={location.pathname === '/tasks' ? 'page' : undefined}
         >
           Tasks
         </Link>
         <Link 
           to="/create-task" 
           className={location.pathname === '/create-task' ? 'nav-link active' : 'nav-link'}
+          role="menuitem"
+          aria-current={location.pathname === '/create-task' ? 'page' : undefined}
         >
           Create Task
         </Link>
         <Link 
           to="/recurring-tasks" 
           className={location.pathname === '/recurring-tasks' ? 'nav-link active' : 'nav-link'}
+          role="menuitem"
+          aria-current={location.pathname === '/recurring-tasks' ? 'page' : undefined}
         >
           Recurring Tasks
         </Link>
         <Link 
           to="/statistics" 
           className={location.pathname === '/statistics' ? 'nav-link active' : 'nav-link'}
+          role="menuitem"
+          aria-current={location.pathname === '/statistics' ? 'page' : undefined}
         >
           Statistics
         </Link>
-        {user && (user as any).role === 'admin' && (
+        {user && user.role === 'admin' && (
           <Link 
             to="/admin" 
             className={location.pathname === '/admin' ? 'nav-link active admin-link' : 'nav-link admin-link'}
+            role="menuitem"
+            aria-current={location.pathname === '/admin' ? 'page' : undefined}
+            aria-label="Admin panel"
           >
             Admin
           </Link>
@@ -63,7 +76,7 @@ const Navigation: React.FC<NavigationProps> = ({ user, onLogout }) => {
           <div className="user-info">
             <span className="user-name">{user.name}</span>
             <span className="user-points">{user.points} pts</span>
-            {(user as any).role === 'admin' && (
+            {user.role === 'admin' && (
               <span className="admin-badge">Admin</span>
             )}
             <button onClick={onLogout} className="logout-button">

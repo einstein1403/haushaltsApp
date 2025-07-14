@@ -1,8 +1,9 @@
 import React from 'react';
 import './PendingApproval.css';
+import { User } from '../services/api';
 
 interface PendingApprovalProps {
-  user: any;
+  user: User;
   onLogout: () => void;
 }
 

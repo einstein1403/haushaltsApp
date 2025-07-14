@@ -1,16 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './AdminUserManagement.css';
+import { User } from '../services/api';
 
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  points: number;
-  role: string;
-  is_approved: boolean;
-  created_at: string;
+interface AdminUser extends User {
   approved_by_name?: string;
-  approved_at?: string;
 }
 
 interface AdminUserManagementProps {
@@ -18,8 +11,8 @@ interface AdminUserManagementProps {
 }
 
 const AdminUserManagement: React.FC<AdminUserManagementProps> = ({ token }) => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [pendingUsers, setPendingUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [pendingUsers, setPendingUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

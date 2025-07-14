@@ -19,8 +19,11 @@ export interface User {
   name: string;
   email: string;
   points: number;
-  role?: string;
-  is_approved?: boolean;
+  role: 'admin' | 'user';
+  is_approved: boolean;
+  created_at?: string;
+  approved_at?: string;
+  approved_by?: number;
 }
 
 export interface Task {

@@ -84,6 +84,37 @@ const initDatabase = async () => {
       AND role != 'admin'
     `);
 
+    // Create performance-critical indexes
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+      CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+      CREATE INDEX IF NOT EXISTS idx_users_is_approved ON users(is_approved);
+      CREATE INDEX IF NOT EXISTS idx_users_points ON users(points DESC);
+    `);
+
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_tasks_created_by ON tasks(created_by);
+      CREATE INDEX IF NOT EXISTS idx_tasks_assigned_to ON tasks(assigned_to);
+      CREATE INDEX IF NOT EXISTS idx_tasks_completed ON tasks(completed);
+      CREATE INDEX IF NOT EXISTS idx_tasks_created_at ON tasks(created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_tasks_parent_task_id ON tasks(parent_task_id);
+      CREATE INDEX IF NOT EXISTS idx_tasks_is_recurring ON tasks(is_recurring);
+    `);
+
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_recurring_tasks_is_active ON recurring_tasks(is_active);
+      CREATE INDEX IF NOT EXISTS idx_recurring_tasks_created_by ON recurring_tasks(created_by);
+      CREATE INDEX IF NOT EXISTS idx_recurring_tasks_assigned_to ON recurring_tasks(assigned_to);
+      CREATE INDEX IF NOT EXISTS idx_recurring_tasks_last_generated ON recurring_tasks(last_generated);
+    `);
+
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_point_history_user_id ON point_history(user_id);
+      CREATE INDEX IF NOT EXISTS idx_point_history_task_id ON point_history(task_id);
+      CREATE INDEX IF NOT EXISTS idx_point_history_earned_at ON point_history(earned_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_point_history_user_earned ON point_history(user_id, earned_at DESC);
+    `);
+
     console.log('Database initialized successfully');
   } catch (error) {
     console.error('Error initializing database:', error);

@@ -1,18 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { userAPI, taskAPI, User, Task } from '../services/api';
+import { handleApiError, getErrorMessage } from '../utils/errorHandler';
+import LoadingSpinner from './LoadingSpinner';
+import ErrorMessage from './ErrorMessage';
 import './Dashboard.css';
 
 const Dashboard: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
+      setError(null);
       const [usersData, tasksData] = await Promise.all([
         userAPI.getUsers(),
         taskAPI.getTasks()
@@ -20,12 +21,18 @@ const Dashboard: React.FC = () => {
       
       setUsers(usersData);
       setRecentTasks(tasksData.slice(0, 5));
-    } catch (error) {
+    } catch (err) {
+      const error = handleApiError(err);
+      setError(error.message);
       console.error('Error loading dashboard data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleResetScores = async () => {
     if (window.confirm('Are you sure you want to reset all scores? This action cannot be undone.')) {
@@ -38,8 +45,36 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  // Memoized calculations for performance
+  const sortedUsers = useMemo(() => {
+    return [...users].sort((a, b) => b.points - a.points);
+  }, [users]);
+
+  const dashboardStats = useMemo(() => {
+    const completedTasks = recentTasks.filter(task => task.completed).length;
+    const pendingTasks = recentTasks.filter(task => !task.completed).length;
+    const totalPoints = users.reduce((sum, user) => sum + user.points, 0);
+    
+    return {
+      completedTasks,
+      pendingTasks,
+      totalPoints,
+      activeUsers: users.length
+    };
+  }, [users, recentTasks]);
+
   if (loading) {
-    return <div className="loading">Loading dashboard...</div>;
+    return <LoadingSpinner message="Loading dashboard..." />;
+  }
+
+  if (error) {
+    return (
+      <ErrorMessage 
+        title="Error loading dashboard"
+        message={error}
+        onRetry={loadData}
+      />
+    );
   }
 
   return (
@@ -54,11 +89,11 @@ const Dashboard: React.FC = () => {
       <div className="dashboard-grid">
         <div className="card leaderboard-card">
           <h2>Leaderboard</h2>
-          {users.length === 0 ? (
+          {sortedUsers.length === 0 ? (
             <p>No users found</p>
           ) : (
             <div className="leaderboard">
-              {users.map((user, index) => (
+              {sortedUsers.map((user, index) => (
                 <div key={user.id} className="leaderboard-item">
                   <span className="rank">#{index + 1}</span>
                   <span className="name">{user.name}</span>
