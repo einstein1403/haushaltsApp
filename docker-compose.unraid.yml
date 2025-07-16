@@ -26,6 +26,8 @@ services:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://postgres:${DB_PASSWORD}@database:5432/household_tasks
       - JWT_SECRET=${JWT_SECRET}
+      - PORT=3001
+      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
     depends_on:
       database:
         condition: service_healthy
@@ -36,6 +38,8 @@ services:
     container_name: household-frontend
     ports:
       - "3000:80"
+    environment:
+      - REACT_APP_API_URL=/api
     depends_on:
       - backend
     restart: unless-stopped

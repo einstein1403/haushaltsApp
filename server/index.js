@@ -22,6 +22,12 @@ const { cache, cacheMiddleware, invalidateUserCache, invalidateTaskCache } = req
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Serve static files (React app) - only in production
+if (process.env.NODE_ENV === 'production') {
+  const path = require('path');
+  app.use(express.static(path.join(__dirname, 'public')));
+}
+
 // Validate JWT_SECRET exists and is secure
 if (!process.env.JWT_SECRET) {
   console.error('FATAL ERROR: JWT_SECRET environment variable must be set for production');
@@ -657,6 +663,16 @@ app.get('/api/admin/pending-users', authenticateToken, requireAdmin, async (req,
     res.status(500).json({ error: error.message });
   }
 });
+
+// Serve React app for all non-API routes (production only)
+if (process.env.NODE_ENV === 'production') {
+  const path = require('path');
+  app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api')) {
+      res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    }
+  });
+}
 
 // Error handling middleware (must be after all routes)
 app.use(notFound);
